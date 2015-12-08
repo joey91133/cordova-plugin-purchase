@@ -129,6 +129,52 @@ function iabGetPurchases() {
     );
 }
 
+//   {
+//     "purchaseToken":"tokenabc",
+//     "developerPayload":"mypayload1",
+//     "packageName":"com.example.MyPackage",
+//     "purchaseState":0, [0=purchased, 1=canceled, 2=refunded]
+//     "orderId":"12345.6789",
+//     "purchaseTime":1382517909216,
+//     "productId":"example_subscription"
+//   }
+function setProductData(product, data) {
+
+    store.log.debug("android -> product data for " + product.id);
+    store.log.debug(data);
+
+    product.transaction = {
+        type             : 'android-playstore',
+        id               : data.orderId,
+        purchaseToken    : data.purchaseToken,
+        developerPayload : data.developerPayload,
+        receipt          : data.receipt,
+        signature        : data.signature
+    };
+
+    // When the product is owned, adjust the state if necessary
+    if (product.state !== store.OWNED && product.state !== store.FINISHED &&
+        product.state !== store.APPROVED) {
+
+        if (data.purchaseState === 0) {
+            product.set("state", store.APPROVED);
+        }
+    }
+
+    // When the product is cancelled or refunded, adjust the state if necessary
+    if (product.state === store.OWNED || product.state === store.FINISHED ||
+        product.state === store.APPROVED) {
+
+        if (data.purchaseState === 1) {
+            product.trigger("cancelled");
+            product.set("state", store.VALID);
+        }
+        else if (data.purchaseState === 2) {
+            product.trigger("refunded");
+            product.set("state", store.VALID);
+        }
+    }
+}
 
 store.when("requested", function(product) {
     store.ready(function() {
@@ -191,7 +237,7 @@ store.when("requested", function(product) {
             else {
                 product.set("state", store.VALID);
             }
-        }, product.id);
+        }, product.id, product.developerPayload);
     });
 });
 

@@ -57,9 +57,10 @@ store.verbosity = 0;
         }, delay || 1);
     }
     var delay = defer;
-    store.Product = function(options) {
+    store.Product = function (options) {
         if (!options) options = {};
         this.id = options.id || null;
+        this.developerPayload = options.developerPayload || undefined;
         this.alias = options.alias || options.id || null;
         var type = this.type = options.type || null;
         if (type !== store.CONSUMABLE && type !== store.NON_CONSUMABLE && type !== store.PAID_SUBSCRIPTION && type !== store.FREE_SUBSCRIPTION) throw new TypeError("Invalid product type");
@@ -301,18 +302,19 @@ store.verbosity = 0;
     "use strict";
     var callbacks = {};
     var callbackId = 0;
-    store.order = function(pid) {
-        var p = pid;
-        if (typeof pid === "string") {
+    store.order = function(p, developerPayload) {
+        if (typeof p === "string") {
+            var pid = p;
             p = store.products.byId[pid] || store.products.byAlias[pid];
             if (!p) {
                 p = new store.Product({
-                    id: pid,
-                    loaded: true,
-                    valid: false
+                    id     : pid,
+                    loaded : true,
+                    valid  : false
                 });
             }
         }
+        p.developerPayload = developerPayload;
         var localCallbackId = callbackId++;
         var localCallback = callbacks[localCallbackId] = {};
         function done() {
@@ -777,17 +779,17 @@ store.verbosity = 0;
         }
         return cordova.exec(success, errorCb(fail), "InAppBillingPlugin", "getPurchases", [ "null" ]);
     };
-    InAppBilling.prototype.buy = function(success, fail, productId) {
+    InAppBilling.prototype.buy = function(success, fail, productId, developerPayload) {
         if (this.options.showLog) {
             log("buy called!");
         }
-        return cordova.exec(success, errorCb(fail), "InAppBillingPlugin", "buy", [ productId ]);
+        return cordova.exec(success, errorCb(fail), "InAppBillingPlugin", "buy", [ productId, developerPayload ]);
     };
-    InAppBilling.prototype.subscribe = function(success, fail, productId) {
+    InAppBilling.prototype.subscribe = function(success, fail, productId, developerPayload) {
         if (this.options.showLog) {
             log("subscribe called!");
         }
-        return cordova.exec(success, errorCb(fail), "InAppBillingPlugin", "subscribe", [ productId ]);
+        return cordova.exec(success, errorCb(fail), "InAppBillingPlugin", "subscribe", [ productId, developerPayload ]);
     };
     InAppBilling.prototype.consumePurchase = function(success, fail, productId) {
         if (this.options.showLog) {
@@ -972,7 +974,7 @@ store.verbosity = 0;
                 } else {
                     product.set("state", store.VALID);
                 }
-            }, product.id);
+            }, product.id, product.developerPayload);
         });
     });
     store.when("product", "finished", function(product) {
