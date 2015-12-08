@@ -1004,6 +1004,7 @@ store.verbosity = 0;
         product.transaction = {
             type: "android-playstore",
             id: data.orderId,
+            versionName: window.android && window.android.getVersionName ? window.android.getVersionName() : null,
             purchaseToken: data.purchaseToken,
             developerPayload: data.developerPayload,
             receipt: data.receipt,
