@@ -446,6 +446,11 @@ store.verbosity = 0;
         }
         store.trigger("re-refreshed");
     };
+    store.load = function() {
+        if (initialRefresh) return;
+        store.log.debug("load products");
+        store.trigger("load");
+    };
 })();
 
 (function() {
@@ -773,6 +778,12 @@ store.verbosity = 0;
             cordova.exec(success, errorCb(fail), "InAppBillingPlugin", "init", []);
         }
     };
+    InAppBilling.prototype.loadProducts = function(success, fail, options, skus) {
+        if (this.options.showLog) {
+            log("loadProducts called!");
+        }
+        cordova.exec(success, errorCb(fail), "InAppBillingPlugin", "loadProducts", [ skus ]);
+    };
     InAppBilling.prototype.getPurchases = function(success, fail) {
         if (this.options.showLog) {
             log("getPurchases called!");
@@ -860,6 +871,9 @@ store.verbosity = 0;
     store.when("re-refreshed", function() {
         iabGetPurchases();
     });
+    store.when("load", function() {
+        loadProducts();
+    });
     var BILLING_RESPONSE_RESULT = {
         OK: 0,
         USER_CANCELED: 1,
@@ -884,6 +898,19 @@ store.verbosity = 0;
         }, {
             showLog: store.verbosity >= store.DEBUG ? true : false
         }, skus);
+    }
+    function loadProducts() {
+        if (!initialized) return;
+        var skusToLoad = [];
+        for (var i = 0; i < store.products.length; ++i) if(!store.products[i].loaded) skusToLoad.push(store.products[i].id);
+        store.inappbilling.loadProducts(iabLoaded, function(err) {
+            store.error({
+                code: store.ERR_SETUP,
+                message: "Add failed - " + err
+            });
+        }, {
+            showLog: store.verbosity >= store.DEBUG ? true : false
+        }, skusToLoad);
     }
     function iabReady() {
         store.log.debug("plugin -> ready");
