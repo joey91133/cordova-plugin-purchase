@@ -374,6 +374,7 @@ public class InAppBillingPlugin extends CordovaPlugin {
 			for (SkuDetails sku : skuList) {
 				myInventory.addSkuDetails(sku);
 			}
+			this.addToInventory = false;
 		} else {
 			myInventory = inventory;
 		}
