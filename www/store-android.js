@@ -570,7 +570,15 @@ store.verbosity = 0;
                 var keep = function(o) {
                     return o.cb !== cb;
                 };
-                for (var i in this.byQuery) this.byQuery[i] = this.byQuery[i].filter(keep);
+                for (var i in this.byQuery) {
+                    if(typeof cb == 'string') {
+                        if(i.indexOf(cb) >= 0) {
+                            delete this.byQuery[i];
+                        }
+                    } else {
+                        this.byQuery[i] = this.byQuery[i].filter(keep);
+                    }
+                }
             }
         },
         triggerAction: function(action, args) {
